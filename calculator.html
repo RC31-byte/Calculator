@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'light-bg': '#FFFFFF',
+                        'dark-bg': '#181818'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <!-- Display -->
+            <div class="mb-6">
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 min-h-[80px] flex flex-col justify-end">
+                    <div id="previous-operation" class="text-sm text-gray-500 dark:text-gray-400 h-5 overflow-hidden"></div>
+                    <div id="display" class="text-3xl font-bold text-gray-900 dark:text-white text-right break-all">0</div>
+                </div>
+            </div>
+
+            <!-- Buttons Grid -->
+            <div class="grid grid-cols-4 gap-3">
+                <!-- Row 1 -->
+                <button onclick="clearAll()" class="calc-btn bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200">AC</button>
+                <button onclick="clearEntry()" class="calc-btn bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200">CE</button>
+                <button onclick="backspace()" class="calc-btn bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200">⌫</button>
+                <button onclick="setOperation('/')" class="calc-btn bg-primary hover:bg-purple-600 text-white">÷</button>
+
+                <!-- Row 2 -->
+                <button onclick="appendNumber('7')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">7</button>
+                <button onclick="appendNumber('8')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">8</button>
+                <button onclick="appendNumber('9')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">9</button>
+                <button onclick="setOperation('*')" class="calc-btn bg-primary hover:bg-purple-600 text-white">×</button>
+
+                <!-- Row 3 -->
+                <button onclick="appendNumber('4')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">4</button>
+                <button onclick="appendNumber('5')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">5</button>
+                <button onclick="appendNumber('6')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">6</button>
+                <button onclick="setOperation('-')" class="calc-btn bg-primary hover:bg-purple-600 text-white">−</button>
+
+                <!-- Row 4 -->
+                <button onclick="appendNumber('1')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">1</button>
+                <button onclick="appendNumber('2')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">2</button>
+                <button onclick="appendNumber('3')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">3</button>
+                <button onclick="setOperation('+')" class="calc-btn bg-primary hover:bg-purple-600 text-white">+</button>
+
+                <!-- Row 5 -->
+                <button onclick="appendNumber('0')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white col-span-2">0</button>
+                <button onclick="appendNumber('.')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">.</button>
+                <button onclick="calculate()" class="calc-btn bg-primary hover:bg-purple-600 text-white">=</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .calc-btn {
+            @apply h-14 rounded-xl text-xl font-semibold transition-all duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
+            font-size: 18px; /* Ensures minimum 16px for mobile */
+        }
+    </style>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Calculator state
+        let currentNumber = '0';
+        let previousNumber = '';
+        let operation = '';
+        let waitingForNewNumber = false;
+
+        const display = document.getElementById('display');
+        const previousOperation = document.getElementById('previous-operation');
+
+        function updateDisplay() {
+            display.textContent = currentNumber;
+            if (previousNumber && operation) {
+                const operationSymbol = {
+                    '+': '+',
+                    '-': '−',
+                    '*': '×',
+                    '/': '÷'
+                }[operation];
+                previousOperation.textContent = `${previousNumber} ${operationSymbol}`;
+            } else {
+                previousOperation.textContent = '';
+            }
+        }
+
+        function appendNumber(num) {
+            if (waitingForNewNumber) {
+                currentNumber = num;
+                waitingForNewNumber = false;
+            } else {
+                if (num === '.' && currentNumber.includes('.')) {
+                    return; // Don't allow multiple decimal points
+                }
+                if (currentNumber === '0' && num !== '.') {
+                    currentNumber = num;
+                } else {
+                    currentNumber += num;
+                }
+            }
+            updateDisplay();
+        }
+
+        function setOperation(op) {
+            if (previousNumber && operation && !waitingForNewNumber) {
+                calculate();
+            }
+            operation = op;
+            previousNumber = currentNumber;
+            waitingForNewNumber = true;
+            updateDisplay();
+        }
+
+        function calculate() {
+            if (!previousNumber || !operation) return;
+            
+            const prev = parseFloat(previousNumber);
+            const current = parseFloat(currentNumber);
+            let result;
+
+            switch (operation) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    if (current === 0) {
+                        currentNumber = 'Error';
+                        previousNumber = '';
+                        operation = '';
+                        updateDisplay();
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                default:
+                    return;
+            }
+
+            // Handle floating point precision
+            if (result % 1 !== 0) {
+                result = parseFloat(result.toFixed(10));
+            }
+
+            currentNumber = result.toString();
+            previousNumber = '';
+            operation = '';
+            waitingForNewNumber = true;
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentNumber = '0';
+            previousNumber = '';
+            operation = '';
+            waitingForNewNumber = false;
+            updateDisplay();
+        }
+
+        function clearEntry() {
+            currentNumber = '0';
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (currentNumber.length > 1) {
+                currentNumber = currentNumber.slice(0, -1);
+            } else {
+                currentNumber = '0';
+            }
+            updateDisplay();
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9' || e.key === '.') {
+                appendNumber(e.key);
+            } else if (e.key === '+' || e.key === '-') {
+                setOperation(e.key);
+            } else if (e.key === '*') {
+                setOperation('*');
+            } else if (e.key === '/') {
+                e.preventDefault();
+                setOperation('/');
+            } else if (e.key === 'Enter' || e.key === '=') {
+                calculate();
+            } else if (e.key === 'Escape') {
+                clearAll();
+            } else if (e.key === 'Backspace') {
+                backspace();
+            }
+        });
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
