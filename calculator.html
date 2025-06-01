@@ -3,73 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
+    <title>Virtual Piano</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        primary: '#5D5CDE',
-                        'light-bg': '#FFFFFF',
-                        'dark-bg': '#181818'
+                        primary: '#5D5CDE'
                     }
                 }
             }
         }
     </script>
+    <style>
+        .piano-key {
+            transition: all 0.1s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        .piano-key:active,
+        .piano-key.pressed {
+            transform: translateY(2px);
+        }
+        
+        .white-key {
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #dee2e6;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        
+        .white-key:active,
+        .white-key.pressed {
+            background: linear-gradient(to bottom, #e9ecef 0%, #dee2e6 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .black-key {
+            background: linear-gradient(to bottom, #343a40 0%, #212529 100%);
+            border: 1px solid #000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        
+        .black-key:active,
+        .black-key.pressed {
+            background: linear-gradient(to bottom, #212529 0%, #000 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .dark .white-key {
+            background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #adb5bd;
+        }
+        
+        .dark .white-key:active,
+        .dark .white-key.pressed {
+            background: linear-gradient(to bottom, #dee2e6 0%, #ced4da 100%);
+        }
+        
+        .key-label {
+            font-size: 10px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        .piano-key:hover .key-label {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .key-label {
+                font-size: 8px;
+            }
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-200">
-    <div class="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-            <!-- Display -->
-            <div class="mb-6">
-                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 min-h-[80px] flex flex-col justify-end">
-                    <div id="previous-operation" class="text-sm text-gray-500 dark:text-gray-400 h-5 overflow-hidden"></div>
-                    <div id="display" class="text-3xl font-bold text-gray-900 dark:text-white text-right break-all">0</div>
+<body class="bg-white dark:bg-gray-900 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">Virtual Piano</h1>
+            <p class="text-gray-600 dark:text-gray-300">Play with your mouse, touch, or keyboard keys</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex justify-center mb-6 space-x-4">
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Volume:</label>
+                <input type="range" id="volumeSlider" min="0" max="100" value="50" 
+                       class="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Wave:</label>
+                <select id="waveType" class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                    <option value="sine">Sine</option>
+                    <option value="square">Square</option>
+                    <option value="sawtooth">Sawtooth</option>
+                    <option value="triangle">Triangle</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Piano Container -->
+        <div class="flex justify-center">
+            <div class="relative bg-gray-800 dark:bg-gray-900 p-4 rounded-lg shadow-2xl">
+                <div id="piano" class="relative flex">
+                    <!-- White keys will be generated here -->
+                </div>
+                <div id="blackKeys" class="absolute top-4 left-4 flex">
+                    <!-- Black keys will be generated here -->
                 </div>
             </div>
+        </div>
 
-            <!-- Buttons Grid -->
-            <div class="grid grid-cols-4 gap-3">
-                <!-- Row 1 -->
-                <button onclick="clearAll()" class="calc-btn bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200">AC</button>
-                <button onclick="clearEntry()" class="calc-btn bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200">CE</button>
-                <button onclick="backspace()" class="calc-btn bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200">⌫</button>
-                <button onclick="setOperation('/')" class="calc-btn bg-primary hover:bg-purple-600 text-white">÷</button>
-
-                <!-- Row 2 -->
-                <button onclick="appendNumber('7')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">7</button>
-                <button onclick="appendNumber('8')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">8</button>
-                <button onclick="appendNumber('9')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">9</button>
-                <button onclick="setOperation('*')" class="calc-btn bg-primary hover:bg-purple-600 text-white">×</button>
-
-                <!-- Row 3 -->
-                <button onclick="appendNumber('4')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">4</button>
-                <button onclick="appendNumber('5')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">5</button>
-                <button onclick="appendNumber('6')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">6</button>
-                <button onclick="setOperation('-')" class="calc-btn bg-primary hover:bg-purple-600 text-white">−</button>
-
-                <!-- Row 4 -->
-                <button onclick="appendNumber('1')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">1</button>
-                <button onclick="appendNumber('2')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">2</button>
-                <button onclick="appendNumber('3')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">3</button>
-                <button onclick="setOperation('+')" class="calc-btn bg-primary hover:bg-purple-600 text-white">+</button>
-
-                <!-- Row 5 -->
-                <button onclick="appendNumber('0')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white col-span-2">0</button>
-                <button onclick="appendNumber('.')" class="calc-btn bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white">.</button>
-                <button onclick="calculate()" class="calc-btn bg-primary hover:bg-purple-600 text-white">=</button>
+        <!-- Instructions -->
+        <div class="mt-8 text-center">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-2">Mouse/Touch</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Click or tap the keys to play notes</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-2">Keyboard</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Use AWSEDFTGYHUJ keys for piano notes</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-2">Octave</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Press Z/X to change octave (3-6)</p>
+                </div>
             </div>
         </div>
     </div>
-
-    <style>
-        .calc-btn {
-            @apply h-14 rounded-xl text-xl font-semibold transition-all duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
-            font-size: 18px; /* Ensures minimum 16px for mobile */
-        }
-    </style>
 
     <script>
         // Dark mode detection
@@ -84,144 +151,254 @@
             }
         });
 
-        // Calculator state
-        let currentNumber = '0';
-        let previousNumber = '';
-        let operation = '';
-        let waitingForNewNumber = false;
+        class VirtualPiano {
+            constructor() {
+                this.audioContext = null;
+                this.currentOctave = 4;
+                this.volume = 0.5;
+                this.waveType = 'sine';
+                this.activeNotes = new Map();
+                this.sustainTime = 1.5;
+                
+                // Note frequencies for octave 4
+                this.noteFrequencies = {
+                    'C': 261.63,
+                    'C#': 277.18,
+                    'D': 293.66,
+                    'D#': 311.13,
+                    'E': 329.63,
+                    'F': 349.23,
+                    'F#': 369.99,
+                    'G': 392.00,
+                    'G#': 415.30,
+                    'A': 440.00,
+                    'A#': 466.16,
+                    'B': 493.88
+                };
 
-        const display = document.getElementById('display');
-        const previousOperation = document.getElementById('previous-operation');
+                // Keyboard mapping
+                this.keyMap = {
+                    'a': 'C',
+                    'w': 'C#',
+                    's': 'D',
+                    'e': 'D#',
+                    'd': 'E',
+                    'f': 'F',
+                    't': 'F#',
+                    'g': 'G',
+                    'y': 'G#',
+                    'h': 'A',
+                    'u': 'A#',
+                    'j': 'B'
+                };
 
-        function updateDisplay() {
-            display.textContent = currentNumber;
-            if (previousNumber && operation) {
-                const operationSymbol = {
-                    '+': '+',
-                    '-': '−',
-                    '*': '×',
-                    '/': '÷'
-                }[operation];
-                previousOperation.textContent = `${previousNumber} ${operationSymbol}`;
-            } else {
-                previousOperation.textContent = '';
+                this.init();
             }
-        }
 
-        function appendNumber(num) {
-            if (waitingForNewNumber) {
-                currentNumber = num;
-                waitingForNewNumber = false;
-            } else {
-                if (num === '.' && currentNumber.includes('.')) {
-                    return; // Don't allow multiple decimal points
-                }
-                if (currentNumber === '0' && num !== '.') {
-                    currentNumber = num;
-                } else {
-                    currentNumber += num;
-                }
-            }
-            updateDisplay();
-        }
-
-        function setOperation(op) {
-            if (previousNumber && operation && !waitingForNewNumber) {
-                calculate();
-            }
-            operation = op;
-            previousNumber = currentNumber;
-            waitingForNewNumber = true;
-            updateDisplay();
-        }
-
-        function calculate() {
-            if (!previousNumber || !operation) return;
-            
-            const prev = parseFloat(previousNumber);
-            const current = parseFloat(currentNumber);
-            let result;
-
-            switch (operation) {
-                case '+':
-                    result = prev + current;
-                    break;
-                case '-':
-                    result = prev - current;
-                    break;
-                case '*':
-                    result = prev * current;
-                    break;
-                case '/':
-                    if (current === 0) {
-                        currentNumber = 'Error';
-                        previousNumber = '';
-                        operation = '';
-                        updateDisplay();
-                        return;
-                    }
-                    result = prev / current;
-                    break;
-                default:
+            async init() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (error) {
+                    console.error('Web Audio API not supported:', error);
                     return;
+                }
+
+                this.createPiano();
+                this.setupEventListeners();
             }
 
-            // Handle floating point precision
-            if (result % 1 !== 0) {
-                result = parseFloat(result.toFixed(10));
+            createPiano() {
+                const piano = document.getElementById('piano');
+                const blackKeysContainer = document.getElementById('blackKeys');
+                
+                const whiteNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+                const blackNotes = ['C#', 'D#', null, 'F#', 'G#', 'A#', null];
+
+                // Create white keys
+                whiteNotes.forEach((note, index) => {
+                    const key = this.createKey(note, 'white');
+                    piano.appendChild(key);
+                });
+
+                // Create black keys
+                blackNotes.forEach((note, index) => {
+                    if (note) {
+                        const key = this.createKey(note, 'black');
+                        key.style.left = `${(index * 60) + 42}px`;
+                        blackKeysContainer.appendChild(key);
+                    }
+                });
             }
 
-            currentNumber = result.toString();
-            previousNumber = '';
-            operation = '';
-            waitingForNewNumber = true;
-            updateDisplay();
-        }
+            createKey(note, type) {
+                const key = document.createElement('div');
+                key.className = `piano-key ${type}-key cursor-pointer flex flex-col justify-end items-center`;
+                key.dataset.note = note;
 
-        function clearAll() {
-            currentNumber = '0';
-            previousNumber = '';
-            operation = '';
-            waitingForNewNumber = false;
-            updateDisplay();
-        }
+                if (type === 'white') {
+                    key.className += ' w-14 h-48 md:w-16 md:h-56 mr-1';
+                } else {
+                    key.className += ' w-8 h-32 md:w-10 md:h-36 absolute z-10';
+                }
 
-        function clearEntry() {
-            currentNumber = '0';
-            updateDisplay();
-        }
+                // Add key label
+                const label = document.createElement('div');
+                label.className = 'key-label mb-2 font-mono font-bold';
+                label.textContent = this.getKeyLabel(note);
+                key.appendChild(label);
 
-        function backspace() {
-            if (currentNumber.length > 1) {
-                currentNumber = currentNumber.slice(0, -1);
-            } else {
-                currentNumber = '0';
+                // Event listeners for mouse/touch
+                key.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.playNote(note);
+                    key.classList.add('pressed');
+                });
+
+                key.addEventListener('mouseup', () => {
+                    key.classList.remove('pressed');
+                });
+
+                key.addEventListener('mouseleave', () => {
+                    key.classList.remove('pressed');
+                });
+
+                // Touch events
+                key.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.playNote(note);
+                    key.classList.add('pressed');
+                });
+
+                key.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    key.classList.remove('pressed');
+                });
+
+                return key;
             }
-            updateDisplay();
+
+            getKeyLabel(note) {
+                const keyEntry = Object.entries(this.keyMap).find(([key, mappedNote]) => mappedNote === note);
+                return keyEntry ? keyEntry[0].toUpperCase() : '';
+            }
+
+            setupEventListeners() {
+                // Volume control
+                document.getElementById('volumeSlider').addEventListener('input', (e) => {
+                    this.volume = e.target.value / 100;
+                });
+
+                // Wave type control
+                document.getElementById('waveType').addEventListener('change', (e) => {
+                    this.waveType = e.target.value;
+                });
+
+                // Keyboard events
+                document.addEventListener('keydown', (e) => {
+                    if (e.repeat) return;
+                    
+                    const key = e.key.toLowerCase();
+                    
+                    if (key === 'z' && this.currentOctave > 3) {
+                        this.currentOctave--;
+                        this.updateOctaveDisplay();
+                    } else if (key === 'x' && this.currentOctave < 6) {
+                        this.currentOctave++;
+                        this.updateOctaveDisplay();
+                    } else if (this.keyMap[key]) {
+                        const note = this.keyMap[key];
+                        this.playNote(note);
+                        this.highlightKey(note, true);
+                    }
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    const key = e.key.toLowerCase();
+                    if (this.keyMap[key]) {
+                        const note = this.keyMap[key];
+                        this.highlightKey(note, false);
+                    }
+                });
+
+                // Initialize audio context on first user interaction
+                document.addEventListener('click', () => {
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                }, { once: true });
+            }
+
+            highlightKey(note, pressed) {
+                const key = document.querySelector(`[data-note="${note}"]`);
+                if (key) {
+                    if (pressed) {
+                        key.classList.add('pressed');
+                    } else {
+                        key.classList.remove('pressed');
+                    }
+                }
+            }
+
+            playNote(note) {
+                if (!this.audioContext) return;
+
+                // Stop existing note if playing
+                if (this.activeNotes.has(note)) {
+                    this.stopNote(note);
+                }
+
+                const frequency = this.getFrequency(note);
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.type = this.waveType;
+                oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                
+                // ADSR envelope
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(this.volume * 0.3, this.audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(this.volume * 0.1, this.audioContext.currentTime + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + this.sustainTime);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + this.sustainTime);
+                
+                this.activeNotes.set(note, { oscillator, gainNode });
+                
+                // Clean up after note ends
+                setTimeout(() => {
+                    this.activeNotes.delete(note);
+                }, this.sustainTime * 1000);
+            }
+
+            stopNote(note) {
+                if (this.activeNotes.has(note)) {
+                    const { oscillator, gainNode } = this.activeNotes.get(note);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.1);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    this.activeNotes.delete(note);
+                }
+            }
+
+            getFrequency(note) {
+                const baseFreq = this.noteFrequencies[note];
+                const octaveMultiplier = Math.pow(2, this.currentOctave - 4);
+                return baseFreq * octaveMultiplier;
+            }
+
+            updateOctaveDisplay() {
+                // Update the title to show current octave
+                document.title = `Virtual Piano - Octave ${this.currentOctave}`;
+            }
         }
 
-        // Keyboard support
-        document.addEventListener('keydown', (e) => {
-            if (e.key >= '0' && e.key <= '9' || e.key === '.') {
-                appendNumber(e.key);
-            } else if (e.key === '+' || e.key === '-') {
-                setOperation(e.key);
-            } else if (e.key === '*') {
-                setOperation('*');
-            } else if (e.key === '/') {
-                e.preventDefault();
-                setOperation('/');
-            } else if (e.key === 'Enter' || e.key === '=') {
-                calculate();
-            } else if (e.key === 'Escape') {
-                clearAll();
-            } else if (e.key === 'Backspace') {
-                backspace();
-            }
+        // Initialize the piano when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VirtualPiano();
         });
-
-        // Initialize display
-        updateDisplay();
     </script>
 </body>
 </html>
